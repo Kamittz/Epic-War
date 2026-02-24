@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic War Chat</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+        body{background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:10px}
+        .container{width:100%;max-width:500px;background:rgba(255,255,255,0.95);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;display:flex;flex-direction:column;height:90vh}
+        .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:20px;text-align:center}
+        .header h1{font-size:1.5rem;margin-bottom:5px}
+        .setup-panel{padding:25px;background:#f8f9fa;overflow-y:auto}
+        .input-group{margin-bottom:20px}
+        .input-group label{display:block;margin-bottom:8px;font-weight:600;color:#495057;font-size:0.95rem}
+        .input-group input,.input-group select{width:100%;padding:14px;border:2px solid #dee2e6;border-radius:12px;font-size:1rem}
+        .btn{width:100%;padding:16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;border-radius:12px;font-size:1.1rem;font-weight:700;cursor:pointer;margin-top:10px}
+        .chat-container{flex:1;display:none;flex-direction:column;background:#e5ddd5}
+        .chat-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:15px;display:flex;justify-content:space-between;align-items:center}
+        .room-code{font-weight:bold;background:rgba(255,255,255,0.25);padding:5px 10px;border-radius:6px;cursor:pointer}
+        .messages{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px}
+        .message{max-width:85%;padding:12px;border-radius:18px;animation:pop 0.3s ease}
+        @keyframes pop{from{opacity:0;transform:scale(0.8) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        .message.own{align-self:flex-end;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-bottom-right-radius:4px}
+        .message.other{align-self:flex-start;background:white;color:#212529;border-bottom-left-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+        .message-header{font-size:0.75rem;margin-bottom:5px;opacity:0.9;display:flex;justify-content:space-between}
+        .original-text{font-size:0.95rem;margin-bottom:4px}
+        .translated-box{background:rgba(255,255,255,0.15);border-radius:10px;padding:8px;margin-top:8px;border-left:3px solid rgba(255,255,255,0.5);font-size:0.85rem;font-style:italic}
+        .message.other .translated-box{background:#f8f9fa;border-left:3px solid #667eea;color:#495057}
+        .input-area{background:white;padding:15px;display:flex;gap:10px;border-top:1px solid #e0e0e0}
+        .message-input{flex:1;padding:14px;border:2px solid #dee2e6;border-radius:25px;font-size:1rem}
+        .send-btn{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+        .system-message{text-align:center;padding:8px;color:#6c757d;font-size:0.8rem;font-style:italic;background:rgba(0,0,0,0.05);border-radius:15px;margin:5px 0}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚔️ Epic War Chat</h1>
+            <p>Tradução Automática</p>
+        </div>
+        
+        <div class="setup-panel" id="setup">
+            <div class="input-group">
+                <label>🎮 Seu Nome:</label>
+                <input type="text" id="username" placeholder="Ex: DragonSlayer" maxlength="20">
+            </div>
+            <div class="input-group">
+                <label>🌍 Seu Idioma:</label>
+                <select id="userLanguage">
+                    <option value="pt">🇧🇷 Português</option>
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>🔑 Código da Sala:</label>
+                <input type="text" id="roomCode" placeholder="Deixe em branco para criar nova">
+            </div>
+            <button class="btn" onclick="enterChat()">⚡ Entrar no Chat</button>
+        </div>
+        
+        <div class="chat-container" id="chat">
+            <div class="chat-header">
+                <div>Sala: <span class="room-code" id="displayRoom" onclick="copyCode()">---</span></div>
+                <button onclick="leaveChat()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:5px 10px;border-radius:5px;cursor:pointer">✕</button>
+            </div>
+            <div class="messages" id="messages"></div>
+            <div class="input-area">
+                <input type="text" class="message-input" id="msgInput" placeholder="Digite..." onkeypress="if(event.key==='Enter')send()">
+                <button class="send-btn" onclick="send()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myName='',myLang='pt',roomId='',msgCount=0;
+        
+        function enterChat(){
+            myName=document.getElementById('username').value.trim();
+            myLang=document.getElementById('userLanguage').value;
+            roomId=document.getElementById('roomCode').value.trim().toUpperCase()||Math.random().toString(36).substring(2,8).toUpperCase();
+            
+            if(!myName){alert('Digite seu nome!');return;}
+            
+            document.getElementById('setup').style.display='none';
+            document.getElementById('chat').style.display='flex';
+            document.getElementById('displayRoom').textContent=roomId;
+            
+            addSystem('Bem-vindo à sala '+roomId+'!');
+            addSystem('Compartilhe este código com seus amigos.');
+            
+            // Simular mensagens de exemplo
+            setTimeout(()=>receive('Hello team! Attack north!','en','Warrior_US'),2000);
+            setTimeout(()=>receive('¡Ataquemos juntos!','es','ElMago_ES'),5000);
+        }
+        
+        function addSystem(text){
+            const div=document.createElement('div');
+            div.className='system-message';
+            div.textContent=text;
+            document.getElementById('messages').appendChild(div);
+        }
+        
+        function addMessage(sender,text,lang,translated,isOwn){
+            const div=document.createElement('div');
+            div.className='message '+(isOwn?'own':'other');
+            
+            let html='<div class="message-header"><span><b>'+sender+'</b> ('+lang+')</span><span>'+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</span></div>';
+            html+='<div class="original-text">'+text+'</div>';
+            
+            if(translated && lang!==myLang){
+                html+='<div class="translated-box">🔄 '+translated+'</div>';
+            }
+            
+            div.innerHTML=html;
+            document.getElementById('messages').appendChild(div);
+            div.scrollIntoView({behavior:'smooth'});
+        }
+        
+        function send(){
+            const input=document.getElementById('msgInput');
+            const text=input.value.trim();
+            if(!text)return;
+            
+            input.value='';
+            addMessage(myName,text,myLang,null,true);
+            
+            // Aqui enviaria para servidor
+            msgCount++;
+            if(msgCount%3===0){
+                setTimeout(()=>receive('Roger that!','en','Teammate'+msgCount),1000);
+            }
+        }
+        
+        async function receive(text,fromLang,sender){
+            let translated=null;
+            if(fromLang!==myLang){
+                translated=await translate(text,fromLang,myLang);
+            }
+            addMessage(sender,text,fromLang,translated,false);
+        }
+        
+        async function translate(text,from,to){
+            try{
+                const res=await fetch('https://libretranslate.de/translate',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({q:text,source:from,target:to,format:'text'})
+                });
+                const data=await res.json();
+                return data.translatedText;
+            }catch(e){
+                return '[Tradução indisponível]';
+            }
+        }
+        
+        function copyCode(){
+            navigator.clipboard.writeText(roomId);
+            alert('Código '+roomId+' copiado!');
+        }
+        
+        function leaveChat(){
+            if(confirm('Sair da sala?'))location.reload();
+        }
+    </script>
+</body>
+</html>
